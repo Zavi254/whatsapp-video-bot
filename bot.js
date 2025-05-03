@@ -1,8 +1,7 @@
 global.crypto = require('crypto').webcrypto;
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('baileys')
 const { Boom } = require('@hapi/boom')
-const { SnapSaver } = require('snapsaver-downloader')
-const axios = require('axios');
+const { handleDownloadLink } = require('./downloader');
 
 async function startBot() {
     // Load auth from the 'auth' folder
@@ -53,40 +52,7 @@ async function startBot() {
 
         console.log('📩 Received message:', text)
 
-        if (text.includes('facebook.com')) { // checks if the message contains a FB video link
-
-            try {
-                console.log('Detected Facebook link:', text)
-
-                // Send "please wait" message once
-                await sock.sendMessage(jid, { text: '⏳ Please wait, I am downloading your video...' }, { quoted: msg })
-
-                const result = await SnapSaver(text);
-                if (result.success && result.data?.media?.length > 0) {
-                    const videoUrl = result.data.media.find(m => m.type === 'video')?.url;
-                    if (videoUrl) {
-                        // Donwloads the video as binary data(Buffer), which can be sent over whatsapp
-                        const response = await axios.get(videoUrl, { responseType: 'arraybuffer' });
-                        const buffer = Buffer.from(response.data);
-
-                        await sock.sendMessage(jid, {
-                            video: buffer,
-                            caption: 'Here is your video 🎬'
-                        })
-
-                    } else {
-                        await sock.sendMessage(jid, { text: 'Failed to retrieve video from SnapSave.' })
-                    }
-                } else {
-                    await sock.sendMessage(jid, { text: 'Failed to get video from SnapSave' })
-                }
-
-            } catch (error) {
-                console.error('Download error:', error);
-                await sock.sendMessage(jid, { text: 'An error occured while processing the link.' })
-            }
-
-        }
+        await handleDownloadLink(sock, text, jid, msg);
     })
 }
 

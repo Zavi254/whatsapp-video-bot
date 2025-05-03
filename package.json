@@ -1,10 +1,10 @@
 {
   "name": "whatsapp-video-bot",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "bot.js",
   "license": "MIT",
   "scripts": {
-    "start": "node index.js"
+    "start": "node bot.js"
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
