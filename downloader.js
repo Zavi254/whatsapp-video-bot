@@ -86,7 +86,7 @@ async function handleDownloadLink(sock, text, jid, msg) {
 
             await sock.sendMessage(jid, {
                 video: buffer,
-                text: `Here is your ${platform} video!`
+                caption: `📽️ Here is your ${platform} video!`
             }, { quoted: msg })
         }
         );

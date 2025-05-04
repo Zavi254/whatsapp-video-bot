@@ -1,7 +1,9 @@
 global.crypto = require('crypto').webcrypto;
+require('dotenv').config();
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('baileys')
 const { Boom } = require('@hapi/boom')
 const { handleDownloadLink } = require('./downloader');
+const { downloadAuthFolder, uploadAuthFolder } = require('./supabase')
 
 const extractMessageText = (msg) => {
     try {
@@ -35,6 +37,9 @@ const extractMessageText = (msg) => {
 
 
 async function startBot() {
+    console.log('☁️ Downloading auth credentials from Supabase...')
+    await downloadAuthFolder('./auth'); // download to a local folder
+
     // Load auth from the 'auth' folder
     const { state, saveCreds } = await useMultiFileAuthState('./auth');
 
@@ -45,7 +50,11 @@ async function startBot() {
     })
 
     // save credentials when they update
-    sock.ev.on('creds.update', saveCreds);
+    sock.ev.on('creds.update', async () => {
+        await saveCreds();
+        console.log('☁️ Uploading updated creds to Supabase...');
+        await uploadAuthFolder('./auth');
+    });
 
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;

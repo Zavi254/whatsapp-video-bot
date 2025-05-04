@@ -8,8 +8,10 @@
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
+    "@supabase/supabase-js": "^2.49.4",
     "axios": "^1.9.0",
     "baileys": "^6.7.16",
+    "dotenv": "^16.5.0",
     "qrcode-terminal": "^0.12.0",
     "snapsaver-downloader": "^1.0.3"
   }
