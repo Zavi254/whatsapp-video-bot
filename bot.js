@@ -3,6 +3,37 @@ const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = requi
 const { Boom } = require('@hapi/boom')
 const { handleDownloadLink } = require('./downloader');
 
+const extractMessageText = (msg) => {
+    try {
+        if (!msg.message || typeof msg.message !== 'object') return '';
+
+        const messageType = Object.keys(msg.message)[0];
+        const content = msg.message[messageType];
+
+        switch (messageType) {
+            case 'conversation':
+                return content;
+            case 'extendedTextMessage':
+                return content.text;
+            case 'imageMessage':
+            case 'videoMessage':
+                return content.caption || '';
+            case 'buttonsResponseMessage':
+                return content.selectedButtonId || '';
+            case 'listResponseMessage':
+                return content.singleSelectReply?.selectedRowId || '';
+            case 'templateButtonReplyMessage':
+                return content.selectedId || '';
+            default:
+                return '';
+        }
+    } catch (err) {
+        console.error('❗ Error extracting message text:', err);
+        return '';
+    }
+};
+
+
 async function startBot() {
     // Load auth from the 'auth' folder
     const { state, saveCreds } = await useMultiFileAuthState('./auth');
@@ -44,13 +75,17 @@ async function startBot() {
     // listen for messages
     sock.ev.on('messages.upsert', async ({ messages }) => {
         const msg = messages[0];
-        if (!msg || msg.key.fromMe) return
+        // if (!msg || msg.key.fromMe) return
+        if (!msg) return;
 
         // Gets the text of the message and the chat ID (phone number in whatsapp format)
-        const text = msg.message.conversation || '';
+        const messageContent = JSON.stringify(msg, null, 2);
         const jid = msg.key.remoteJid;
 
-        console.log('📩 Received message:', text)
+        // console.log('📦 Raw message data:', messageContent);
+
+        const text = extractMessageText(msg);
+        console.log('📩 Extracted message:', text || '[empty message]');
 
         await handleDownloadLink(sock, text, jid, msg);
     })

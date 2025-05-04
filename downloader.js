@@ -1,6 +1,8 @@
 const { SnapSaver } = require('snapsaver-downloader');
 const axios = require('axios');
 
+const MAX_VIDEO_SIZE = 20 * 1024 * 1024; // 20MB
+
 const isSupportedVideoLink = (text) => {
     const urlPatterns = [
         /(?:https?:\/\/)?(?:www\.)?facebook\.com\/watch\/?\?v=\d+/i,
@@ -38,23 +40,65 @@ async function handleDownloadLink(sock, text, jid, msg) {
     try {
         const result = await SnapSaver(text);
 
-        if (result.success && result.data?.media?.length > 0) {
-            const videoUrl = result.data.media.find(m => m.type === 'video')?.url;
-
-            if (videoUrl) {
-                const response = await axios.get(videoUrl, { responseType: 'arraybuffer' });
-                const buffer = Buffer.from(response.data);
-
-                await sock.sendMessage(jid, {
-                    video: buffer,
-                    caption: `🎬 Here is your ${platform} video!`
-                });
-            } else {
-                await sock.sendMessage(jid, { text: `❌ No downloadable video found in ${platform} link.` });
-            }
-        } else {
-            await sock.sendMessage(jid, { text: `❌ Failed to retrieve video from ${platform}.` });
+        if (!result.success || !result.data?.media?.length) {
+            await sock.sendMessage(jid, { text: `❌ Failed to retrieve video from ${platform}.` })
+            return;
         }
+
+        const videoMedia = result.data.media.find(m => m.type === 'video');
+        const videoUrl = videoMedia?.url;
+
+        if (!videoUrl || !/^https?:\/\//.test(videoUrl)) {
+            await sock.sendMessage(jid, { text: `❌ Invalid or missing video URL from ${platform}.` });
+            return;
+        }
+
+        const response = await axios({
+            url: videoUrl,
+            method: 'GET',
+            responseType: 'stream'
+        });
+
+        let totalSize = 0;
+        const chunks = [];
+
+        response.data.on('data', (chunk) => {
+            totalSize += chunk.length;
+            if (totalSize > MAX_VIDEO_SIZE) {
+                console.log(`⚠️ Video too large: ${totalSize} bytes`);
+                response.data.destroy();
+            } else {
+                chunks.push(chunk)
+            }
+        });
+
+        response.data.on('end', async () => {
+            if (totalSize > MAX_VIDEO_SIZE) {
+                await sock.sendMessage(jid,
+                    {
+                        text: `⚠️ The video is too large to download (limit is 20MB). Try another link.`
+
+                    });
+                return;
+            }
+
+            const buffer = Buffer.concat(chunks);
+
+            await sock.sendMessage(jid, {
+                video: buffer,
+                text: `Here is your ${platform} video!`
+            }, { quoted: msg })
+        }
+        );
+
+        response.data.on('error', async (err) => {
+            console.error(`❗ Stream error while downloading from ${platform}:`, err.message);
+            await sock.sendMessage(jid, {
+                text: `⚠️ An error occurred while downloading your video. Please try again later.`
+            });
+        });
+
+
     } catch (error) {
         console.error(`❗ Download error from ${platform}:`, error);
         await sock.sendMessage(jid, {
