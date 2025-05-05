@@ -4,7 +4,8 @@
   "main": "bot.js",
   "license": "MIT",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node bot.js",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
@@ -16,5 +17,9 @@
     "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
     "snapsaver-downloader": "^1.0.3"
+  },
+  "devDependencies": {
+    "patch-package": "^8.0.0",
+    "postinstall-postinstall": "^2.1.0"
   }
 }
