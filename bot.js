@@ -5,6 +5,7 @@ const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = requi
 const { Boom } = require('@hapi/boom')
 const { handleDownloadLink } = require('./downloader');
 const { downloadAuthFolder, uploadAuthFolder } = require('./supabase')
+const { uploadQRToSupabase } = require('./uploadQRToSupabase')
 
 const app = express();
 
@@ -60,7 +61,19 @@ async function startBot() {
     });
 
     sock.ev.on('connection.update', async (update) => {
-        const { connection, lastDisconnect } = update;
+        const { connection, qr, lastDisconnect } = update;
+
+        if (qr) {
+            console.log('🔁 Received QR code, uploading image...');
+
+            const qrUrl = await uploadQRToSupabase(qr);
+            if (qrUrl) {
+                console.log(`🔗 Scan your QR here: ${qrUrl}`);
+            } else {
+                console.log('⚠️ Failed to upload QR code.');
+            }
+        }
+
         if (connection === 'close') {
             const error = lastDisconnect?.error;
 

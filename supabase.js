@@ -62,4 +62,4 @@ async function downloadAuthFolder(localAuthPath = './auth') {
 
 }
 
-module.exports = { uploadAuthFolder, downloadAuthFolder }
+module.exports = { uploadAuthFolder, downloadAuthFolder, supabase }
