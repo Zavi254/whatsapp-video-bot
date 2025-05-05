@@ -1,16 +1,25 @@
 {
   "name": "whatsapp-video-bot",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "bot.js",
   "license": "MIT",
   "scripts": {
-    "start": "node index.js"
+    "start": "node bot.js",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@hapi/boom": "^10.0.1",
+    "@supabase/supabase-js": "^2.49.4",
     "axios": "^1.9.0",
     "baileys": "^6.7.16",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
     "snapsaver-downloader": "^1.0.3"
+  },
+  "devDependencies": {
+    "patch-package": "^8.0.0",
+    "postinstall-postinstall": "^2.1.0"
   }
 }
