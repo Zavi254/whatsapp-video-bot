@@ -118,8 +118,8 @@ async function startBot() {
 
 startBot();
 
-app.get('/', (req, res) => {
-    res.send('🤖 Bot is running!');
+app.get('/health', (req, res) => {
+    res.status(200).send('🤖 Bot is running!');
 })
 
 const PORT = process.env.PORT || 3000;
