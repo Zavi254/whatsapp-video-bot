@@ -1,34 +1,70 @@
-# 🤖 WhatsApp Facebook Video Downloader Bot
+# 🤖 WhatsApp Video Downloader Bot
 
-A simple Node.js bot that listens for Facebook video links sent on WhatsApp and automatically replies with the downloaded video — no need to switch apps or use Chrome.
-
-Built using the [Baileys](https://github.com/WhiskeySockets/Baileys) WhatsApp Web API.
+A Node.js-powered WhatsApp bot that downloads videos from Facebook, Instagram, and TikTok links and sends them directly to users via WhatsApp. Built using the [Baileys](https://github.com/adiwajshing/Baileys) library for WhatsApp Web API and hosted serverlessly on [Render](https://render.com).
 
 ---
 
-## ✨ Features
+## 🌐 Live Status
 
-- 📥 Detects Facebook video links in WhatsApp messages
-- ⚡ Downloads videos automatically using [SnapSaver](https://www.npmjs.com/package/snapsaver-downloader)
-- 📤 Replies directly in the same chat with the video file
-- 💾 Keeps session alive between restarts using persistent auth
-- ☁️ Can be deployed to cloud platforms like [Render](https://render.com)
+🟢 Bot is hosted on: [`https://your-bot.onrender.com`](https://your-bot.onrender.com)
 
----
-
-## 🛠 Tech Stack
-
-- Node.js
-- [Baileys](https://github.com/WhiskeySockets/Baileys)
-- [SnapSaver](https://www.npmjs.com/package/snapsaver-downloader)
-- Axios (for downloading video buffers)
+📱 To use the bot:
+1. Clone the repo
+2. Start the server locally or on Render
+3. Scan the QR code to link your WhatsApp account
+4. Send a Facebook, Instagram, or TikTok video link to get a downloadable video back
 
 ---
 
-## 🚀 Setup Instructions
+## 🎯 Features
 
-### 1. Clone the repo
+- ✅ WhatsApp bot powered by `Baileys` (WebSockets)
+- 📥 Supports video downloads from:
+  - Facebook
+  - Instagram
+  - TikTok
+- ⚡ Automatically extracts video URLs and replies with video file (if under 50MB)
+- 🧠 Intelligent platform detection + regex matching
+- 🔐 Stores WhatsApp session credentials securely in Supabase Storage
+- 🔁 Reconnects automatically if the connection drops
+- 🧰 Cronjob-compatible with Render for server spin-up
+- 🚨 Graceful error handling (oversized videos, failed links, etc.)
 
+---
+
+## 🔧 Tech Stack
+
+- **Node.js** – Express backend
+- **Baileys** – WhatsApp Web API wrapper
+- **Supabase** – Storage for persistent auth credentials
+- **Axios** – Video streaming and download
+- **SnapSaver Downloader** – Fast media fetcher for popular platforms
+- **Render** – Hosting and cronjob support
+- **dotenv** – Secure env config
+
+---
+
+## 🚀 Quick Start
+
+### 1. Clone this repo
 ```bash
 git clone https://github.com/Zavi254/whatsapp-video-bot.git
 cd whatsapp-fb-downloader
+
+```
+### 2. Install dependencies
+```bash
+npm install
+```
+
+### 3. Create .env file
+```bash
+PORT=3000
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your-service-role-key
+SUPABASE_BUCKET=your-bucket-name
+```
+### 4. Deploy (optional)
+```bash
+git push origin main
+```
