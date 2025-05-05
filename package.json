@@ -12,6 +12,7 @@
     "axios": "^1.9.0",
     "baileys": "^6.7.16",
     "dotenv": "^16.5.0",
+    "express": "^5.1.0",
     "qrcode-terminal": "^0.12.0",
     "snapsaver-downloader": "^1.0.3"
   }
