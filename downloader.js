@@ -1,7 +1,7 @@
 const { SnapSaver } = require('snapsaver-downloader');
 const axios = require('axios');
 
-const MAX_VIDEO_SIZE = 20 * 1024 * 1024; // 20MB
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 20MB
 
 const isSupportedVideoLink = (text) => {
     const urlPatterns = [
@@ -62,11 +62,14 @@ async function handleDownloadLink(sock, text, jid, msg) {
         let totalSize = 0;
         const chunks = [];
 
-        response.data.on('data', (chunk) => {
+        response.data.on('data', async (chunk) => {
             totalSize += chunk.length;
             if (totalSize > MAX_VIDEO_SIZE) {
                 console.log(`⚠️ Video too large: ${totalSize} bytes`);
                 response.data.destroy();
+                await sock.sendMessage(jid, {
+                    text: `⚠️ The videos is too large to download (limit is 50MB)`
+                }, { quoted: msg })
             } else {
                 chunks.push(chunk)
             }
