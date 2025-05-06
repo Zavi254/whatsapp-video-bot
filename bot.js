@@ -122,6 +122,14 @@ app.get('/health', (req, res) => {
     res.status(200).send('🤖 Bot is running!');
 })
 
+app.use((req, res, next) => {
+    if (req.path === '/health') {
+        console.debug = () => { };
+        console.log = () => { }
+    }
+    next();
+})
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {

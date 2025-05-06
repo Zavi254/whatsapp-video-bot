@@ -14,9 +14,6 @@ const isSupportedVideoLink = (text) => {
         /(?:https?:\/\/)?vt\.tiktok\.com\/[A-Za-z0-9]+/i,
         /(?:https?:\/\/)?vm\.tiktok\.com\/[A-Za-z0-9]+/i
     ];
-
-    console.log('🔍 Link match result:', urlPatterns.some((regex) => regex.test(text)), '| Text:', text);
-
     return urlPatterns.some((regex) => regex.test(text));
 }
 
@@ -65,7 +62,7 @@ async function handleDownloadLink(sock, text, jid, msg) {
         response.data.on('data', async (chunk) => {
             totalSize += chunk.length;
             if (totalSize > MAX_VIDEO_SIZE) {
-                console.log(`⚠️ Video too large: ${totalSize} bytes`);
+                console.warn(`⚠️ Video too large: ${totalSize} bytes`);
                 response.data.destroy();
                 await sock.sendMessage(jid, {
                     text: `⚠️ The videos is too large to download (limit is 50MB)`

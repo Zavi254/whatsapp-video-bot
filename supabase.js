@@ -1,6 +1,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 const path = require('path');
+const { getFolderHashes } = require('./fileHashUtil');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
@@ -8,11 +9,36 @@ const BUCKET_NAME = process.env.SUPABASE_BUCKET;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Stores the last known file hashes
+let lastUploadedHashes = {}
+
+// Logging helper
+function log(message, level = 'info') {
+    const now = new Date().toISOString();
+    console.log(`[${now}] [${level.toUpperCase()}] ${message}`)
+}
+
 async function uploadAuthFolder(localAuthPath = './auth') {
+
+    if (!fs.existsSync(localAuthPath)) {
+        log(`Auth folder not found: ${localAuthPath}`, 'warn');
+        return;
+    }
+
     const files = fs.readdirSync(localAuthPath);
+    const currentHashes = getFolderHashes(localAuthPath);
 
     for (const file of files) {
         const filePath = path.join(localAuthPath, file);
+
+        const currentHash = currentHashes[file];
+        const previousHash = lastUploadedHashes[file];
+
+        if (currentHash === previousHash) {
+            log(`⏩ Skipped unchanged file: ${file}`);
+            continue;
+        }
+
         const buffer = fs.readFileSync(filePath);
         const { error } = await supabase
             .storage
@@ -23,9 +49,10 @@ async function uploadAuthFolder(localAuthPath = './auth') {
             });
 
         if (error) {
-            console.error('❌ Upload error:', error);
+            log(`❌ Upload error for ${file}: ${error.message}`, 'error')
         } else {
-            console.log(`✅ Uploaded ${file} to Supabase`);
+            log(`✅ Uploaded ${file} to Supabase`);
+            lastUploadedHashes[file] = currentHash;
         }
     }
 
@@ -40,7 +67,7 @@ async function downloadAuthFolder(localAuthPath = './auth') {
         .list('auth');
 
     if (error) {
-        console.error('❌ Error listing Supabase files:', error);
+        log(`❌ Error listing Supabase files: ${error.message}`, 'error');
         return;
     }
 
@@ -59,6 +86,9 @@ async function downloadAuthFolder(localAuthPath = './auth') {
         fs.writeFileSync(filePath, Buffer.from(await fileData.arrayBuffer()));
         console.log(`⬇️ Downloaded ${file.name} from Supabase`)
     }
+
+    // Refresh hash cache after download
+    lastUploadedHashes = getFolderHashes(localAuthPath);
 
 }
 
