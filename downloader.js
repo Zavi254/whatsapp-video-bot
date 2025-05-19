@@ -1,4 +1,5 @@
 const { SnapSaver } = require('snapsaver-downloader');
+const Tiktok = require('@tobyg74/tiktok-api-dl');
 const axios = require('axios');
 
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 20MB
@@ -24,32 +25,8 @@ const detectPlatform = (url) => {
     return 'Video';
 }
 
-async function handleDownloadLink(sock, text, jid, msg) {
-    if (!isSupportedVideoLink(text)) return;
-
-    const platform = detectPlatform(text);
-    console.log(`🔍 Detected ${platform} link`);
-
-    await sock.sendMessage(jid, {
-        text: `⏳ Please wait, downloading your ${platform} video...`
-    }, { quoted: msg })
-
+async function downloadAndSendVideo(sock, jid, msg, videoUrl, platform) {
     try {
-        const result = await SnapSaver(text);
-
-        if (!result.success || !result.data?.media?.length) {
-            await sock.sendMessage(jid, { text: `❌ Failed to retrieve video from ${platform}.` })
-            return;
-        }
-
-        const videoMedia = result.data.media.find(m => m.type === 'video');
-        const videoUrl = videoMedia?.url;
-
-        if (!videoUrl || !/^https?:\/\//.test(videoUrl)) {
-            await sock.sendMessage(jid, { text: `❌ Invalid or missing video URL from ${platform}.` });
-            return;
-        }
-
         const response = await axios({
             url: videoUrl,
             method: 'GET',
@@ -73,39 +50,78 @@ async function handleDownloadLink(sock, text, jid, msg) {
         });
 
         response.data.on('end', async () => {
-            if (totalSize > MAX_VIDEO_SIZE) {
-                await sock.sendMessage(jid,
-                    {
-                        text: `⚠️ The video is too large to download (limit is 20MB). Try another link.`
-
-                    });
-                return;
-            }
-
+            if (totalSize > MAX_VIDEO_SIZE) return;
             const buffer = Buffer.concat(chunks);
-
             await sock.sendMessage(jid, {
                 video: buffer,
                 caption: `📽️ Here is your ${platform} video!`
             }, { quoted: msg })
-        }
-        );
+        })
 
         response.data.on('error', async (err) => {
             console.error(`❗ Stream error while downloading from ${platform}:`, err.message);
             await sock.sendMessage(jid, {
-                text: `⚠️ An error occurred while downloading your video. Please try again later.`
+                text: `⚠️ An error occurred while downloading your video.`
             });
         });
 
-
     } catch (error) {
-        console.error(`❗ Download error from ${platform}:`, error);
+        console.error(`❗ Video download failed from ${platform}:`, error.message);
         await sock.sendMessage(jid, {
-            text: `⚠️ Error occurred while downloading from ${platform}.`
-        });
-    }
+            text: `⚠️ Could not fetch the video, Try again later.`
+        })
 
+    }
+}
+
+async function handleDownloadLink(sock, text, jid, msg) {
+    if (!isSupportedVideoLink(text)) return;
+
+    const platform = detectPlatform(text);
+    console.log(`🔍 Detected ${platform} link`);
+
+    await sock.sendMessage(jid, {
+        text: `⏳ Please wait, downloading your ${platform} video...`
+    }, { quoted: msg });
+
+    try {
+        if (platform === 'Tiktok') {
+            const response = await Tiktok.Downloader(text, {
+                version: 'v2',
+                showOriginalResponse: true
+            });
+
+            if (response.status !== "success" || !response.result || response.result.type !== "video" || !response.result.video?.playAddr?.length) {
+                await sock.sendMessage(jid, { text: `❌ Failed to retrieve the Tiktok video` })
+                return;
+            }
+
+            const videoUrl = response.result.video.playAddr[0];
+            await downloadAndSendVideo(sock, jid, msg, videoUrl, platform)
+
+        } else {
+            const result = await SnapSaver(text);
+            if (!result.success || !result.data?.media?.length) {
+                await sock.sendMessage(jid, { text: `❌ Failed to retrieve video from ${platform}.` })
+                return;
+            }
+
+            const videoMedia = result.data.media.find(m => m.type === 'video');
+            const videoUrl = videoMedia?.url;
+
+            if (!videoUrl) {
+                await sock.sendMessage(jid, { text: `❌ Invalid or missing video URL from ${platform}.` });
+                return;
+            }
+            await downloadAndSendVideo(sock, jid, msg, videoUrl, platform)
+
+        }
+    } catch (error) {
+        console.error(`❗Error handling ${platform} download:`, error);
+        await sock.sendMessage(jid, {
+            text: `⚠️ An error occured while downloading from ${platform}.`
+        })
+    }
 }
 
 module.exports = { handleDownloadLink }
