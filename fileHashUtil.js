@@ -1,20 +1,21 @@
-const fs = require('fs');
+const fs = require('fs').promises;
 const crypto = require('crypto');
 const path = require('path');
 
-function getFileHash(filePath) {
-    const buffer = fs.readFileSync(filePath);
+async function getFileHash(filePath) {
+    const buffer = await fs.readFile(filePath);
     return crypto.createHash('sha256').update(buffer).digest('hex');
 }
 
-function getFolderHashes(folderPath) {
-    const files = fs.readdirSync(folderPath);
+async function getFolderHashes(folderPath) {
+    const files = await fs.readdir(folderPath);
     const hashes = {};
 
     for (const file of files) {
         const filePath = path.join(folderPath, file);
-        if (fs.statSync(filePath).isFile()) {
-            hashes[file] = getFileHash(filePath);
+        const stat = await fs.stat(filePath);
+        if (stat.isFile()) {
+            hashes[file] = await getFileHash(filePath);
         }
     }
 

@@ -27,11 +27,21 @@ const detectPlatform = (url) => {
 
 async function downloadAndSendVideo(sock, jid, msg, videoUrl, platform) {
     try {
+        // const response = await axios({
+        //     url: videoUrl,
+        //     method: 'GET',
+        //     responseType: 'stream'
+        // });
+
         const response = await axios({
             url: videoUrl,
             method: 'GET',
-            responseType: 'stream'
-        });
+            responseType: 'stream',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                'Referer': 'https://www.tiktok.com'
+            }
+        })
 
         let totalSize = 0;
         const chunks = [];

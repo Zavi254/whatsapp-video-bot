@@ -17,3 +17,4 @@ Thumbs.db
 
 # Env files (in case you add API keys or secrets later)
 .env
+fileHashes.json
