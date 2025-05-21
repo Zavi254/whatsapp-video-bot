@@ -4,8 +4,8 @@ const express = require('express');
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('baileys')
 const { Boom } = require('@hapi/boom')
 const { handleDownloadLink } = require('./services/downloader');
-const { downloadAuthFolder, uploadAuthFolder } = require('./services/supabase')
-const { uploadQRToSupabase } = require('./uploadQRToSupabase')
+const { downloadAuthFolder, uploadAuthFolder } = require('./services/supabase');
+const { uploadQRToSupabase } = require('./services/uploadQRToSupabase');
 
 const app = express();
 
