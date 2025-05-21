@@ -1,14 +1,14 @@
 const fs = require('fs').promises;
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
-const { getFolderHashes } = require('./fileHashUtil');
+const { getFolderHashes } = require('../utils/fileHashUtil');
 
 const {
     loadHashes,
     saveHashes,
     getChangedFiles,
     updateStoredHashes
-} = require('./fileHashCache');
+} = require('../fileHashCache');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;

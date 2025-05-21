@@ -3,8 +3,8 @@ require('dotenv').config();
 const express = require('express');
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('baileys')
 const { Boom } = require('@hapi/boom')
-const { handleDownloadLink } = require('./downloader');
-const { downloadAuthFolder, uploadAuthFolder } = require('./supabase')
+const { handleDownloadLink } = require('./services/downloader');
+const { downloadAuthFolder, uploadAuthFolder } = require('./services/supabase')
 const { uploadQRToSupabase } = require('./uploadQRToSupabase')
 
 const app = express();
