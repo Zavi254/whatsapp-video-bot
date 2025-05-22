@@ -6,8 +6,6 @@ A Node.js-powered WhatsApp bot that downloads videos from Facebook, Instagram, a
 
 ## 🌐 Live Status
 
-🟢 Bot is hosted on: [`https://whatsapp-video-bot.onrender.com`](https://whatsapp-video-bot.onrender.com)
-
 📱 To use the bot:
 1. Clone the repo
 2. Start the server locally or on Render
