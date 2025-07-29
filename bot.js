@@ -63,13 +63,9 @@ async function startBot() {
     sock.ev.on('connection.update', async (update) => {
         const { connection, qr, lastDisconnect } = update;
 
-        let lastUploadedQR = null;
-
         if (qr) {
-            if (qr === lastUploadedQR) return; // Skip duplicate
-            lastUploadedQR = qr;
-
-            console.log('🔁 Received QR code, scan this with WhatsApp');
+            console.log('🔁 Received QR code, uploading image...');
+            console.log(qr);
             const qrcode = require('qrcode-terminal');
             qrcode.generate(qr, { small: true });
 

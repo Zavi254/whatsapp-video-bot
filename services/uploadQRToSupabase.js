@@ -1,5 +1,6 @@
 const { supabase } = require('./supabase');
 const qrcode = require('qrcode');
+const { randomUUID } = require('crypto');
 
 async function uploadQRToSupabase(qrData) {
     try {
@@ -7,7 +8,7 @@ async function uploadQRToSupabase(qrData) {
         const qrImageBuffer = await qrcode.toBuffer(qrData);
 
         // Generate unique file name
-        const fileName = `qr/latest.png`;
+        const fileName = `qr-codes/qr-${randomUUID()}.png`;
 
         // Upload to Supabase
         const { error } = await supabase
@@ -15,7 +16,7 @@ async function uploadQRToSupabase(qrData) {
             .from(process.env.SUPABASE_BUCKET)
             .upload(fileName, qrImageBuffer, {
                 contentType: 'image/png',
-                upsert: true // ensures overwrite
+                upsert: true
             });
 
         if (error) {
