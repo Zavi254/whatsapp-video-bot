@@ -1,7 +1,7 @@
 global.crypto = require('crypto').webcrypto;
 require('dotenv').config();
 const express = require('express');
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('baileys')
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys')
 const { Boom } = require('@hapi/boom')
 const { handleDownloadLink } = require('./services/downloader');
 const { downloadAuthFolder, uploadAuthFolder } = require('./services/supabase');
@@ -41,7 +41,6 @@ const extractMessageText = (msg) => {
 
 
 async function startBot() {
-    console.log('☁️ Downloading auth credentials from Supabase...')
     await downloadAuthFolder('./auth'); // download to a local folder
 
     // Load auth from the 'auth' folder
@@ -51,6 +50,7 @@ async function startBot() {
     const sock = makeWASocket({
         auth: state,
         printQRInTerminal: true,
+        logger: require('pino')({ level: 'debug' })
     })
 
     // save credentials when they update
@@ -63,8 +63,15 @@ async function startBot() {
     sock.ev.on('connection.update', async (update) => {
         const { connection, qr, lastDisconnect } = update;
 
+        let lastUploadedQR = null;
+
         if (qr) {
-            console.log('🔁 Received QR code, uploading image...');
+            if (qr === lastUploadedQR) return; // Skip duplicate
+            lastUploadedQR = qr;
+
+            console.log('🔁 Received QR code, scan this with WhatsApp');
+            const qrcode = require('qrcode-terminal');
+            qrcode.generate(qr, { small: true });
 
             const qrUrl = await uploadQRToSupabase(qr);
             if (qrUrl) {
