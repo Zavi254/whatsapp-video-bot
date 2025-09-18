@@ -8,6 +8,7 @@ const isSupportedVideoLink = (text) => {
     const urlPatterns = [
         /(?:https?:\/\/)?(?:www\.)?facebook\.com\/watch\/?\?v=\d+/i,
         /(?:https?:\/\/)?(?:www\.)?facebook\.com\/share\/v\/[A-Za-z0-9]+/i,
+        /(?:https?:\/\/)?(?:www\.)?facebook\.com\/share\/r\/[A-Za-z0-9]+/i,
         /(?:https?:\/\/)?(?:www\.)?facebook\.com\/[^\/]+\/videos\/\d+/i,
         /(?:https?:\/\/)?fb\.watch\/[A-Za-z0-9]+/i,
         /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(p|reel)\/[A-Za-z0-9_-]+/i,
