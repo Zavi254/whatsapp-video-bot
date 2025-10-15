@@ -29,13 +29,8 @@ const detectPlatform = (url) => {
     return 'Video';
 }
 
-export async function downloadAndSendVideo(sock, jid, msg, videoUrl, platform, customHeaders = null) {
+export async function downloadAndSendVideo(sock, jid, msg, videoUrl, platform, headers = {}) {
     try {
-        const headers = customHeaders || {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-            'Referer': 'https://www.tiktok.com'
-        };
-
         const response = await axios({
             url: videoUrl,
             method: 'GET',
@@ -139,12 +134,9 @@ export async function handleDownloadLink(sock, text, jid, msg) {
                     return;
                 }
 
-                const headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                    'Referer': 'https://twitter.com'
-                };
+                // stream the twitter video directly using Axios
+                await downloadAndSendVideo(sock, jid, msg, videoUrl, platform);
 
-                await downloadAndSendVideo(sock, jid, msg, videoUrl, platform, headers);
 
             } catch (error) {
                 console.error(`❗Error downloading Twitter video:`, error);
