@@ -29,16 +29,18 @@ const detectPlatform = (url) => {
     return 'Video';
 }
 
-export async function downloadAndSendVideo(sock, jid, msg, videoUrl, platform) {
+export async function downloadAndSendVideo(sock, jid, msg, videoUrl, platform, customHeaders = null) {
     try {
+        const headers = customHeaders || {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+            'Referer': 'https://www.tiktok.com'
+        };
+
         const response = await axios({
             url: videoUrl,
             method: 'GET',
             responseType: 'stream',
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                'Referer': 'https://www.tiktok.com'
-            }
+            headers
         })
 
         let totalSize = 0;
@@ -113,26 +115,44 @@ export async function handleDownloadLink(sock, text, jid, msg) {
         } else if (platform === 'Twitter') {
             // normalize x.com -> twitter.com
             const normalizedUrl = text.replace(/https?:\/\/x\.com/i, 'https://twitter.com');
+            try {
+                const twitterResponse = await twitterDownloader(normalizedUrl);
 
-            const twitterResponse = await twitterDownloader(normalizedUrl);
+                if (!twitterResponse?.status || !Array.isArray(twitterResponse.url) || !twitterDownloader.url?.length) {
+                    await sock.sendMessage(jid, { text: `❌ Failed to retrieve the Twitter video.` })
+                    return;
+                }
 
-            console.log('Twitter raw response:', twitterResponse);
+                // prefers HD video, fallback to SD if it's a proper Mp4
+                let videoData = twitterResponse.url.find(u => u.hd)
+                    || twitterResponse.url.find(u => u.sd?.endsWith('.mp4'));
 
-            if (!twitterResponse.status || !twitterDownloader.url?.length) {
-                await sock.sendMessage(jid, { text: `❌ Failed to retrieve the Twitter video.` })
-                return;
+                if (!videoData) {
+                    await sock.sendMessage(jid, { text: `❌ No valid video found on Twitter.` });
+                    return;
+                }
+
+                const videoUrl = videoData.hd || videoData.sd;
+
+                if (!videoUrl) {
+                    await sock.sendMessage(jid, { text: `❌ Video URL missing.` });
+                    return;
+                }
+
+                const headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                    'Referer': 'https://twitter.com'
+                };
+
+                await downloadAndSendVideo(sock, jid, msg, videoUrl, platform, headers);
+
+            } catch (error) {
+                console.error(`❗Error downloading Twitter video:`, error);
+                await sock.sendMessage(jid, {
+                    text: `⚠️ An error occurred while downloading the Twitter video.`
+                });
             }
 
-            // prefer HD vide if available
-            const videoData = twitterResponse.url.find(u => u.hd) || twitterResponse.url[0]
-            const videoUrl = videoData.hd || videoData.sd;
-
-            if (!videoUrl) {
-                await sock.sendMessage(jid, { text: `❌ No video URL found from Twitter.` });
-                return;
-            }
-
-            await downloadAndSendVideo(sock, jid, msg, videoUrl, platform);
 
         } else {
             const result = await SnapSaver(text);
