@@ -116,6 +116,8 @@ export async function handleDownloadLink(sock, text, jid, msg) {
 
             const twitterResponse = await twitterDownloader(normalizedUrl);
 
+            console.log('Twitter raw response:', twitterResponse);
+
             if (!twitterResponse.status || !twitterDownloader.url?.length) {
                 await sock.sendMessage(jid, { text: `❌ Failed to retrieve the Twitter video.` })
                 return;
