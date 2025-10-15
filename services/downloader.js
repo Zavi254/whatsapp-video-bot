@@ -1,6 +1,6 @@
-const { SnapSaver } = require('snapsaver-downloader');
-const Tiktok = require('@tobyg74/tiktok-api-dl');
-const axios = require('axios');
+import { SnapSaver } from 'snapsaver-downloader';
+import Tiktok from "@tobyg74/tiktok-api-dl"
+import axios from 'axios';
 
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 20MB
 
@@ -14,7 +14,8 @@ const isSupportedVideoLink = (text) => {
         /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(p|reel)\/[A-Za-z0-9_-]+/i,
         /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^\/]+\/video\/\d+/i,
         /(?:https?:\/\/)?vt\.tiktok\.com\/[A-Za-z0-9]+/i,
-        /(?:https?:\/\/)?vm\.tiktok\.com\/[A-Za-z0-9]+/i
+        /(?:https?:\/\/)?vm\.tiktok\.com\/[A-Za-z0-9]+/i,
+        /(?:https?:\/\/)?(?:www\.)?(twitter|x)\.com\/[A-Za-z0-9_]+\/status\/\d+/i
     ];
     return urlPatterns.some((regex) => regex.test(text));
 }
@@ -23,17 +24,12 @@ const detectPlatform = (url) => {
     if (url.includes('facebook.com') || url.includes('fb.watch')) return 'Facebook';
     if (url.includes('instagram.com')) return 'Instagram';
     if (url.includes('tiktok.com') || url.includes('vt.tiktok.com')) return 'Tiktok';
+    if (url.includes('twitter.com') || url.includes('x.com')) return 'Twitter';
     return 'Video';
 }
 
-async function downloadAndSendVideo(sock, jid, msg, videoUrl, platform) {
+export async function downloadAndSendVideo(sock, jid, msg, videoUrl, platform) {
     try {
-        // const response = await axios({
-        //     url: videoUrl,
-        //     method: 'GET',
-        //     responseType: 'stream'
-        // });
-
         const response = await axios({
             url: videoUrl,
             method: 'GET',
@@ -85,7 +81,7 @@ async function downloadAndSendVideo(sock, jid, msg, videoUrl, platform) {
     }
 }
 
-async function handleDownloadLink(sock, text, jid, msg) {
+export async function handleDownloadLink(sock, text, jid, msg) {
     if (!isSupportedVideoLink(text)) return;
 
     const platform = detectPlatform(text);
@@ -102,7 +98,10 @@ async function handleDownloadLink(sock, text, jid, msg) {
                 showOriginalResponse: true
             });
 
-            if (response.status !== "success" || !response.result || response.result.type !== "video" || !response.result.video?.playAddr?.length) {
+            if (response.status !== "success" ||
+                !response.result ||
+                response.result.type !== "video" ||
+                !response.result.video?.playAddr?.length) {
                 await sock.sendMessage(jid, { text: `❌ Failed to retrieve the Tiktok video` })
                 return;
             }
@@ -134,5 +133,3 @@ async function handleDownloadLink(sock, text, jid, msg) {
         })
     }
 }
-
-module.exports = { handleDownloadLink }

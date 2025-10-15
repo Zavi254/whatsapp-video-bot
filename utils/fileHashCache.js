@@ -1,10 +1,14 @@
-const fs = require('fs').promises;
-const path = require('path');
-const { getFolderHashes } = require('./fileHashUtil');
+import fs from "fs/promises"
+import path from "path";
+import { fileURLToPath } from "url";
+import { getFolderHashes } from "./fileHashUtil.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const DEFAULT_HASH_FILE = path.join(__dirname, 'fileHashes.json');
 
-async function loadHashes(hashFile = DEFAULT_HASH_FILE) {
+export async function loadHashes(hashFile = DEFAULT_HASH_FILE) {
     try {
         const content = await fs.readFile(hashFile, 'utf-8');
         return JSON.parse(content);
@@ -13,11 +17,11 @@ async function loadHashes(hashFile = DEFAULT_HASH_FILE) {
     }
 }
 
-async function saveHashes(hashes, hashFile = DEFAULT_HASH_FILE) {
+export async function saveHashes(hashes, hashFile = DEFAULT_HASH_FILE) {
     await fs.writeFile(hashFile, JSON.stringify(hashes, null, 2));
 }
 
-async function getChangedFiles(folderPath, hashFile = DEFAULT_HASH_FILE) {
+export async function getChangedFiles(folderPath, hashFile = DEFAULT_HASH_FILE) {
     const [previousHashes, currentHashes] = await Promise.all([
         loadHashes(hashFile),
         getFolderHashes(folderPath)
@@ -34,13 +38,6 @@ async function getChangedFiles(folderPath, hashFile = DEFAULT_HASH_FILE) {
     return { changedFiles, currentHashes, previousHashes };
 }
 
-async function updateStoredHashes(newHashes, hashFile = DEFAULT_HASH_FILE) {
+export async function updateStoredHashes(newHashes, hashFile = DEFAULT_HASH_FILE) {
     await saveHashes(newHashes, hashFile);
 }
-
-module.exports = {
-    loadHashes,
-    saveHashes,
-    getChangedFiles,
-    updateStoredHashes,
-};
