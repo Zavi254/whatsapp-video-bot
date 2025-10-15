@@ -1,13 +1,13 @@
-const fs = require('fs').promises;
-const crypto = require('crypto');
-const path = require('path');
+import fs from "fs/promises";
+import crypto from "crypto";
+import path from "path";
 
-async function getFileHash(filePath) {
+export async function getFileHash(filePath) {
     const buffer = await fs.readFile(filePath);
     return crypto.createHash('sha256').update(buffer).digest('hex');
 }
 
-async function getFolderHashes(folderPath) {
+export async function getFolderHashes(folderPath) {
     const files = await fs.readdir(folderPath);
     const hashes = {};
 
@@ -21,5 +21,3 @@ async function getFolderHashes(folderPath) {
 
     return hashes;
 }
-
-module.exports = { getFolderHashes }

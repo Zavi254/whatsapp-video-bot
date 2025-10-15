@@ -1,14 +1,20 @@
-const fs = require('fs').promises;
-const path = require('path');
-const { createClient } = require('@supabase/supabase-js');
-const { getFolderHashes } = require('../utils/fileHashUtil');
+import dotenv from "dotenv";
+dotenv.config();
 
-const {
+import fs from "fs/promises";
+import path from "path";
+import crypto from "crypto";
+import { fileURLToPath } from "url";
+import { createClient } from '@supabase/supabase-js';
+import {
     loadHashes,
     saveHashes,
     getChangedFiles,
     updateStoredHashes
-} = require('../utils/fileHashCache');
+} from "../utils/fileHashCache.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
@@ -24,7 +30,7 @@ function log(message, level = 'info') {
     console.log(`[${now}] [${level.toUpperCase()}] ${message}`)
 }
 
-async function uploadAuthFolder(localAuthPath = AUTH_FOLDER) {
+export async function uploadAuthFolder(localAuthPath = AUTH_FOLDER) {
     try {
         const { changedFiles, currentHashes } = await getChangedFiles(localAuthPath, HASH_FILE);
 
@@ -60,7 +66,7 @@ async function uploadAuthFolder(localAuthPath = AUTH_FOLDER) {
     }
 }
 
-async function downloadAuthFolder(localAuthPath = AUTH_FOLDER) {
+export async function downloadAuthFolder(localAuthPath = AUTH_FOLDER) {
     try {
         await fs.mkdir(localAuthPath, { recursive: true });
 
@@ -91,7 +97,7 @@ async function downloadAuthFolder(localAuthPath = AUTH_FOLDER) {
             }
 
             const buffer = Buffer.from(await fileData.arrayBuffer());
-            const currentHash = require('crypto').createHash('sha256').update(buffer).digest('hex');
+            const currentHash = crypto.createHash('sha256').update(buffer).digest('hex');
 
             if (previousHashes[file.name] === currentHash) {
                 log(`⏩ Skipped download (unchanged): ${file.name}`);
@@ -112,4 +118,4 @@ async function downloadAuthFolder(localAuthPath = AUTH_FOLDER) {
     }
 }
 
-module.exports = { uploadAuthFolder, downloadAuthFolder, supabase }
+export { supabase }
