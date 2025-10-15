@@ -111,6 +111,9 @@ export async function handleDownloadLink(sock, text, jid, msg) {
 
         } else {
             const result = await SnapSaver(text);
+
+            console.log('SnapSaver result:', JSON.stringify(result, null, 2))
+
             if (!result.success || !result.data?.media?.length) {
                 await sock.sendMessage(jid, { text: `❌ Failed to retrieve video from ${platform}.` })
                 return;
