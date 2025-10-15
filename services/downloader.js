@@ -1,8 +1,9 @@
 import { SnapSaver } from 'snapsaver-downloader';
-import Tiktok from "@tobyg74/tiktok-api-dl"
+import Tiktok from "@tobyg74/tiktok-api-dl";
+import { twitter as twitterDownloader } from 'btch-downloader';
 import axios from 'axios';
 
-const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 20MB
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
 
 const isSupportedVideoLink = (text) => {
     const urlPatterns = [
@@ -108,6 +109,28 @@ export async function handleDownloadLink(sock, text, jid, msg) {
 
             const videoUrl = response.result.video.playAddr[0];
             await downloadAndSendVideo(sock, jid, msg, videoUrl, platform)
+
+        } else if (platform === 'Twitter') {
+            // normalize x.com -> twitter.com
+            const normalizedUrl = text.replace(/https?:\/\/x\.com/i, 'https://twitter.com');
+
+            const twitterResponse = await twitterDownloader(normalizedUrl);
+
+            if (!twitterResponse.status || !twitterDownloader.url?.length) {
+                await sock.sendMessage(jid, { text: `❌ Failed to retrieve the Twitter video.` })
+                return;
+            }
+
+            // prefer HD vide if available
+            const videoData = twitterResponse.url.find(u => u.hd) || twitterResponse.url[0]
+            const videoUrl = videoData.hd || videoData.sd;
+
+            if (!videoUrl) {
+                await sock.sendMessage(jid, { text: `❌ No video URL found from Twitter.` });
+                return;
+            }
+
+            await downloadAndSendVideo(sock, jid, msg, videoUrl, platform);
 
         } else {
             const result = await SnapSaver(text);
