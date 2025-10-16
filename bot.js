@@ -13,7 +13,7 @@ import {
     fetchLatestBaileysVersion,
 } from "baileys";
 
-import { handleDownloadLink } from './services/downloader.js';
+import { handleDownloadLink } from "./services/downloader/index.js";
 import { downloadAuthFolder, uploadAuthFolder } from './services/supabase.js';
 import { uploadQRToSupabase } from './services/uploadQRToSupabase.js';
 
