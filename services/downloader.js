@@ -2,6 +2,7 @@ import { SnapSaver } from 'snapsaver-downloader';
 import Tiktok from "@tobyg74/tiktok-api-dl";
 import { twitter as twitterDownloader } from 'btch-downloader';
 import axios from 'axios';
+import { waitForVideoUrl } from '../utils/waitForVideoUrl';
 
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
 
@@ -127,6 +128,19 @@ export async function handleDownloadLink(sock, text, jid, msg) {
 
             if (!videoUrl) {
                 await sock.sendMessage(jid, { text: `❌ No video URL found from Twitter.` });
+                return;
+            }
+
+            // poll until video is live
+            const headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                'Referer': 'https://twitter.com'
+            };
+
+            const isReady = await waitForVideoUrl(videoUrl, headers);
+
+            if (!isReady) {
+                await sock.sendMessage(jid, { text: `⚠️ Twitter video not accessible yet. Try again later.` });
                 return;
             }
 
