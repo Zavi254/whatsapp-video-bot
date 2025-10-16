@@ -2,7 +2,7 @@ import { SnapSaver } from 'snapsaver-downloader';
 import Tiktok from "@tobyg74/tiktok-api-dl";
 import { twitter as twitterDownloader } from 'btch-downloader';
 import axios from 'axios';
-import { waitForVideoUrl } from '../utils/waitForVideoUrl';
+import { waitForVideoUrl } from '../utils/waitForVideoUrl.js';
 
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
 
