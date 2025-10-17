@@ -21,15 +21,15 @@ const TIMEOUT_MS = 60000;
 export async function normalizeAudio(inputBuffer, mime) {
     return limit(async () => {
         const tmpInput = join(tmpdir(), `${randomUUID()}.input`);
-        const tmpOutput = join(tmpdir(), `${randomUUID()}.m4a`);
+        const tmpOutput = join(tmpdir(), `${randomUUID()}.mp3`);
 
         await fs.writeFile(tmpInput, inputBuffer);
 
         const ffmpegPromise = new Promise((resolve, reject) => {
             const command = Ffmpeg(tmpInput)
-                .audioCodec("aac")
+                .audioCodec("libmp3lame")
                 .audioBitrate("128k")
-                .format("ipod")
+                .format("mp3")
                 .on("error", (err) => reject(err))
                 .on("end", async () => {
                     try {
@@ -38,8 +38,8 @@ export async function normalizeAudio(inputBuffer, mime) {
                         await fs.unlink(tmpOutput).catch(() => { });
                         resolve({
                             buffer: outBuffer,
-                            ext: "m4a",
-                            mime: "audio/mp4"
+                            ext: "mp3",
+                            mime: "audio/mpeg"
                         });
                     } catch (readErr) {
                         reject(readErr);
