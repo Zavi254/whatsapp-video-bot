@@ -42,7 +42,7 @@ export async function handleYouTube(sock, jid, msg, url) {
         }
 
         // send the thumbnail preview first
-        await sock.sendMessage(
+        const thumbMsg = await sock.sendMessage(
             jid,
             {
                 image: { url: ytResponse.thumbnail },
@@ -72,12 +72,12 @@ export async function handleYouTube(sock, jid, msg, url) {
         await sock.sendMessage(
             jid,
             {
-                audio: normalizedBuffer,
+                document: normalizedBuffer,
                 mimetype: fixedMime,
                 fileName,
                 caption: `🎵 *${ytResponse.title}*\n👤 ${ytResponse.author}`
             },
-            { quoted: msg }
+            { quoted: thumbMsg }
         )
 
         console.log(
