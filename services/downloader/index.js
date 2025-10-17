@@ -7,9 +7,15 @@ export async function handleDownloadLink(sock, text, jid, msg) {
     const platform = detectPlatform(text);
     console.log(`🔍 Detected ${platform} link`);
 
-    await sock.sendMessage(jid, {
-        text: `⏳ Your ${platform} video is loading...`
-    }, { quoted: msg });
+    // Handle YouTube differently since we only support audio
+    const loadingText =
+        platform === "YouTube"
+            ? "⏳ Your YouTube audio is loading..."
+            : `⏳ Your ${platform} video is loading...`
+
+    await sock.sendMessage(jid,
+        { text: loadingText },
+        { quoted: msg });
 
     try {
         const handler = platformHandlers[platform];
