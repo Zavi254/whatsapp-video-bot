@@ -3,7 +3,7 @@ import { PassThrough } from "stream";
 import pLimit from "p-limit";
 
 const limit = pLimit(2);
-const TIMEOUT_MS = 60000;
+const TIMEOUT_MS = 180000; // 3 minutes
 
 /**
  * Normalize or convert an audio buffer to WhatsApp-compatible .mp3
