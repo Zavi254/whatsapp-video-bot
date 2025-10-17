@@ -1,65 +1,75 @@
 import Ffmpeg from "fluent-ffmpeg";
-import { tmpdir } from "os";
-import { join } from "path";
-import { promises as fs } from "fs";
-import { randomUUID } from "crypto";
+import { PassThrough } from "stream";
 import pLimit from "p-limit";
 
-// Limit concurrent FFmpeg jobs to 3
-const limit = pLimit(3);
-
-// Maximum conversion time (ms)
+const limit = pLimit(2);
 const TIMEOUT_MS = 60000;
 
 /**
- * Ensures the audio buffer is in a Whatsapp-compatible format (.mp3 or .m4a)
- * @param {Buffer} inputBuffer - Raw downloaded audio buffer
- * @param {string} mime - Original MIME type from the server
- * @returns {Promise<{buffer: Buffer, ext: string, mime: string}>}
+ * Normalize or convert an audio buffer to WhatsApp-compatible .mp3
+ * - Uses FFmpeg streaming pipeline (no disk I/O)
+ * - Automatically skips conversion if already MP3
+ * 
+ * @param {Buffer|import('stream').Readable} inputBuffer - Audio data (Buffer or stream)
+ * @param {string} mime - MIME type from the source
+ * @returns {Promise<{ buffer: Buffer, ext: string, mime: string }>}
  */
-
-export async function normalizeAudio(inputBuffer, mime) {
+export async function normalizeAudio(input, mime) {
     return limit(async () => {
-        const tmpInput = join(tmpdir(), `${randomUUID()}.input`);
-        const tmpOutput = join(tmpdir(), `${randomUUID()}.mp3`);
+        try {
+            // if already MP3, return directly
+            if (mime?.includes("audio/mpeg")) {
+                if (Buffer.isBuffer(input)) {
+                    return { buffer: input, ext: "mp3", mime: "audio/mpeg" };
+                }
+                // Convert stream to buffer
+                const chunks = [];
+                for await (const chunk of input) chunks.push(chunk);
+                return { buffer: Buffer.concat(chunks), ext: "mp3", mime: "audio/mpeg" };
+            }
 
-        await fs.writeFile(tmpInput, inputBuffer);
+            // Wrap FFmpeg process in a promise
+            return new Promise((resolve, reject) => {
+                const command = Ffmpeg(input)
+                    .audioCodec("libmp3lame")
+                    .audioBitrate("128k")
+                    .format("mp3")
 
-        const ffmpegPromise = new Promise((resolve, reject) => {
-            const command = Ffmpeg(tmpInput)
-                .audioCodec("libmp3lame")
-                .audioBitrate("128k")
-                .format("mp3")
-                .on("error", (err) => reject(err))
-                .on("end", async () => {
-                    try {
-                        const outBuffer = await fs.readFile(tmpOutput);
-                        await fs.unlink(tmpInput).catch(() => { });
-                        await fs.unlink(tmpOutput).catch(() => { });
-                        resolve({
-                            buffer: outBuffer,
-                            ext: "mp3",
-                            mime: "audio/mpeg"
-                        });
-                    } catch (readErr) {
-                        reject(readErr);
-                    }
+                const outputStream = new PassThrough();
+                const chunks = [];
+
+
+                command.on("error", (err) => {
+                    clearTimeout(timeout);
+                    reject(err);
                 })
-                .save(tmpOutput);
+                command.on("end", () => {
+                    clearTimeout(timeout);
+                });
 
-            // Add a hard timeout (kill process if it runs too long)
-            const timeout = setTimeout(() => {
-                try {
-                    command.kill("SIGKILL");
-                } catch { }
-                reject(new Error("FFmpeg conversion timed out"));
-            }, TIMEOUT_MS);
+                // pipe output
+                command.pipe(outputStream, { end: true });
 
-            // clear timeout if FFmpeg finishes early
-            command.on("end", () => clearTimeout(timeout));
-            command.on("error", () => clearTimeout(timeout));
-        });
+                // Collect output chunks
+                outputStream.on("data", (chunk) => chunks.push(chunk));
+                outputStream.on("end", () => {
+                    resolve({
+                        buffer: Buffer.concat(chunks),
+                        ext: "mp3",
+                        mime: "audio/mpeg"
+                    });
+                });
+                outputStream.on("error", reject);
 
-        return ffmpegPromise;
+                // timeout protection
+                const timeout = setTimeout(() => {
+                    try { command.kill("SIGKILL"); } catch { }
+                    reject(new Error("FFmpeg conversion timed out"));
+                }, TIMEOUT_MS)
+            })
+        } catch (error) {
+            console.error("normalizeAudio error:", error);
+            throw error;
+        }
     });
 }

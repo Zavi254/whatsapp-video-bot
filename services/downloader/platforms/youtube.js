@@ -51,20 +51,20 @@ export async function handleYouTube(sock, jid, msg, url) {
             { quoted: msg }
         );
 
-        // download the audio file
+        // download the audio file as STREAM
         const response = await axios.get(audioUrl, {
-            responseType: "arraybuffer",
+            responseType: "stream",
             timeout: 60000,
             maxContentLength: MAX_VIDEO_SIZE,
             validateStatus: (status) => status >= 200 && status < 400,
         });
 
-        const audioBuffer = Buffer.from(response.data);
+        const inputStream = response.data; // this a readable stream
         const mime = response.headers["content-type"] || "";
 
-        // Normalize audio -> WhatsApp compatible .m4a
+        // Normalize (stream -> mp3)
         const { buffer: normalizedBuffer, ext, mime: fixedMime } =
-            await normalizeAudio(audioBuffer, mime);
+            await normalizeAudio(inputStream, mime);
 
         const fileName = `${ytResponse.title || "youtube_audio"}.${ext}`;
 
