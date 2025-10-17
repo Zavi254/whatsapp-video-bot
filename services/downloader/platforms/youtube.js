@@ -13,7 +13,7 @@ export async function handleYouTube(sock, jid, msg, url) {
             console.error("Invalid response from btch-downloader:", ytResponse);
             await sock.sendMessage(
                 jid,
-                { text: 'Failed to retrieve the Youtube audio.' },
+                { text: 'Failed to retrieve the Youtube audio. Try again' },
                 { quoted: msg }
             );
             return;
@@ -40,16 +40,6 @@ export async function handleYouTube(sock, jid, msg, url) {
             return;
         }
 
-        // download the audio file
-        const response = await axios.get(audioUrl, {
-            responseType: "arraybuffer",
-            timeout: 60000,
-            maxContentLength: MAX_VIDEO_SIZE,
-            validateStatus: (status) => status >= 200 && status < 400,
-        });
-
-        const audioBuffer = Buffer.from(response.data);
-
         // send the thumbnail preview first
         await sock.sendMessage(
             jid,
@@ -60,12 +50,22 @@ export async function handleYouTube(sock, jid, msg, url) {
             { quoted: msg }
         );
 
+        // download the audio file
+        const response = await axios.get(audioUrl, {
+            responseType: "arraybuffer",
+            timeout: 60000,
+            maxContentLength: MAX_VIDEO_SIZE,
+            validateStatus: (status) => status >= 200 && status < 400,
+        });
+
+        const audioBuffer = Buffer.from(response.data);
+
         // send the MP3 to the user
         await sock.sendMessage(
             jid,
             {
                 audio: audioBuffer,
-                mimetype: "audio/mp4",
+                mimetype: "audio/mpeg",
                 fileName: `${ytResponse.title || "youtube_audio"}.mp3`,
                 caption: `🎵 *${ytResponse.title}*\n👤 ${ytResponse.author}`
             },
