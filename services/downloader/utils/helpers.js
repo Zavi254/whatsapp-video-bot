@@ -9,7 +9,8 @@ export const isSupportedVideoLink = (text) => {
         /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^\/]+\/video\/\d+/i,
         /(?:https?:\/\/)?vt\.tiktok\.com\/[A-Za-z0-9]+/i,
         /(?:https?:\/\/)?vm\.tiktok\.com\/[A-Za-z0-9]+/i,
-        /(?:https?:\/\/)?(?:www\.)?(twitter|x)\.com\/[A-Za-z0-9_]+\/status\/\d+/i
+        /(?:https?:\/\/)?(?:www\.)?(twitter|x)\.com\/[A-Za-z0-9_]+\/status\/\d+/i,
+        /(?:https?:\/\/)?(?:www\.)?(youtube\.com|youtu\.be)\/[A-Za-z0-9_\-?&=\/]+/i
     ];
     return urlPatterns.some((regex) => regex.test(text));
 };
@@ -19,5 +20,6 @@ export const detectPlatform = (url) => {
     if (url.includes('instagram.com')) return 'Instagram';
     if (url.includes('tiktok.com') || url.includes('vt.tiktok.com')) return 'Tiktok';
     if (url.includes('twitter.com') || url.includes('x.com')) return 'Twitter';
+    if (url.includes('youtube.com') || url.includes('youtu.be')) return 'YouTube';
     return 'Video';
 };
