@@ -66,7 +66,7 @@ export async function handleYouTube(sock, jid, msg, url) {
             {
                 audio: audioBuffer,
                 mimetype: "audio/mpeg",
-                fileName: `${ytResponse.title || "youtube_audio"}.mp3`,
+                fileName: `${ytResponse.title || "youtube_audio"}.m4a`,
                 caption: `🎵 *${ytResponse.title}*\n👤 ${ytResponse.author}`
             },
             { quoted: msg }
