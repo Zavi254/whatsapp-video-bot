@@ -1,6 +1,7 @@
 import { youtube as youtubeDownloader } from "btch-downloader";
 import axios from "axios";
 import { MAX_VIDEO_SIZE } from "../constants.js";
+import { normalizeAudio } from "../utils/normalizeAudio.js";
 
 export async function handleYouTube(sock, jid, msg, url) {
     try {
@@ -59,38 +60,53 @@ export async function handleYouTube(sock, jid, msg, url) {
         });
 
         const audioBuffer = Buffer.from(response.data);
+        const mime = response.headers["content-type"] || "";
+
+        // Normalize audio -> WhatsApp compatible .m4a
+        const { buffer: normalizedBuffer, ext, mime: fixedMime } =
+            await normalizeAudio(audioBuffer, mime);
+
+        const fileName = `${ytResponse.title || "youtube_audio"}.${ext}`;
 
         // send the MP3 to the user
         await sock.sendMessage(
             jid,
             {
-                audio: audioBuffer,
-                mimetype: "audio/mpeg",
-                fileName: `${ytResponse.title || "youtube_audio"}.m4a`,
+                audio: normalizedBuffer,
+                mimetype: fixedMime,
+                fileName,
                 caption: `🎵 *${ytResponse.title}*\n👤 ${ytResponse.author}`
             },
             { quoted: msg }
         )
 
         console.log(
-            `✅ Sent YouTube audio (${(audioBuffer.length / 1024 / 1024).toFixed(2)} MB): ${ytResponse.title}`
+            `✅ Sent normalized YouTube audio (${(normalizedBuffer.length / 1024 / 1024).toFixed(
+                2
+            )} MB): ${ytResponse.title}`
         );
     } catch (error) {
-        console.error("YouTube download error:", error.message || error);
+        console.error("YouTube download error:", error);
 
         if (error.code === "ERR_FR_MAX_BODY_LENGTH_EXCEEDED" || error.response?.status === 413) {
             await sock.sendMessage(
                 jid,
                 {
                     text: `⚠️ The audio file is too large to download (limit ${MAX_VIDEO_SIZE / 1024 / 1024
-                        }MB).`,
+                        } MB).`,
                 },
+                { quoted: msg }
+            );
+        } else if (error.message?.includes("FFmpeg conversion timed out")) {
+            await sock.sendMessage(
+                jid,
+                { text: "⚠️ Conversion took too long and was cancelled. Please try again." },
                 { quoted: msg }
             );
         } else {
             await sock.sendMessage(
                 jid,
-                { text: "⚠️ Failed to download YouTube audio. Please try again later." },
+                { text: "⚠️ Failed to download or convert YouTube audio. Please try again later." },
                 { quoted: msg }
             );
         }
